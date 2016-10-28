@@ -268,14 +268,40 @@ the docs are built as follows:
 ./configure --enable-docs
 make doc
 ```
+It will then push the contents of the resulting `<lib>.docdir` to the Github
+pages branch of your repo.
 
-It also relies on you uploading an OAuth token to your Travis job. To do this,
-create a token on your Github account settings page and upload it as follows:
+Authentication to push to GitHub either uses an account-wide OAuth token or
+a SSH deploy key for the repository to be supplied to Travis.
 
+### Authorisation by OAuth Token
+OAuth tokens with the `repo_public` scope permit read and write access to all
+public repositories you account has access to, the `repo` scope gives access to
+private repositories as well. If you wish to limit access to just the
+repository being deployed to, use the SSH Deploy Key approach.
+
+1. [Create a GitHub OAuth token](https://github.com/settings/tokens) with the
+`public_repo` or the `repo` scope enabled.
+
+2. Either add this token as an Environment Variable named `GH_TOKEN` to the settings
+page of your repository on TravisCI, or encrypt and add it to the `.travis-ci.yml`
+configuration with the following command.
 ```shell
 gem install travis
 travis encrypt GH_TOKEN=<token> --add
+
+# Alternatively:
+travis env set GH_TOKEN <token>
 ```
 
-It will then push the contents of the resulting `<lib>.docdir` to the Github
-pages branch of your repo.
+### Authorisation by SSH Deploy Key
+
+1. Generate a new SSH keypair.
+2. Add the public key as a deploy key on your Repository's settings page,
+selecting "Allow Write Access".
+3. Add the private key content as an environment variable named `GH_DEPLOY_KEY`
+in the Travis repository settings. Newlines should be replaced by `\n` and the
+string should then be quoted (or shell escaped). The following command does this:
+```shell
+travis env set -p -- GH_DEPLOY_KEY "$(perl -pe 's/\n/\\n/' deploy.key)"
+```

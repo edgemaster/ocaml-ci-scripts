@@ -21,10 +21,23 @@ DOCDIR=.gh-pages
 if [ -n "$KEEP" ]; then trap "rm -rf $DOCDIR" EXIT; fi
 rm -rf $DOCDIR
 
-# Error out if $GH_TOKEN is empty or unset
-: ${GH_TOKEN:?"GH_TOKEN need to be uploaded via travis-encrypt"}
+REDACT_PATTERN=""
 
-git clone https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} $DOCDIR 2>&1 | sed -e "s/$GH_TOKEN/!REDACTED!/g"
+# Error out if $GH_TOKEN and $DH_DEPLOY_KEY are empty or unset
+if [ -n "$GH_TOKEN" ]; then
+  REPO="https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
+  REDACT_PATTERN="s/$GH_TOKEN/!REDACTED!/g"
+elif [ -n "$GH_DEPLOY_KEY" ]; then
+  # $GH_DEPLOY_KEY should be inserted into project settings quoted and with newlines escaped as \n
+  eval `ssh-agent`
+  echo -e "$GH_DEPLOY_KEY" | ssh-add /dev/stdin
+  REPO="git@github.com:${TRAVIS_REPO_SLUG}.git"
+else
+  echo "GH_TOKEN or GH_DEPLOY_KEY variable must be set"
+  exit 1
+fi
+
+git clone $REPO $DOCDIR 2>&1 | sed -e "$REDACT_PATTERN"
 git -C $DOCDIR checkout gh-pages || git -C $DOCDIR checkout --orphan gh-pages
 
 cp _build/*.docdir/* $DOCDIR
@@ -33,4 +46,6 @@ git -C $DOCDIR config user.email "travis@travis-ci.org"
 git -C $DOCDIR config user.name "Travis"
 git -C $DOCDIR add .
 git -C $DOCDIR commit --allow-empty -m "Travis build $TRAVIS_BUILD_NUMBER pushed docs to gh-pages"
-git -C $DOCDIR push origin gh-pages 2>&1 | sed -e "s/$GH_TOKEN/!REDACTED!/g"
+git -C $DOCDIR push origin gh-pages 2>&1 | sed -e "$REDACT_PATTERN"
+
+if [ -n "$GH_DEPLOY_KEY" ]; then eval `ssh-agent -k`; fi
