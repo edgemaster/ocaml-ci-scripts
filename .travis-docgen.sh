@@ -4,7 +4,10 @@
 set -e
 # Make sure we're not echoing any sensitive data
 set +x
-set -o errexit -o nounset
+
+# Initialise used variables to prevent errors with "-o nounset"
+DOCDIR=.gh-pages
+${KEEP:=}         # If set to some string, will delete the DOCDIR on script termination
 
 eval `opam config env`
 ./configure --enable-docs
