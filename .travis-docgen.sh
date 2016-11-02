@@ -33,7 +33,7 @@ if [ -n "$GH_TOKEN" ]; then
 elif [ -n "$GH_DEPLOY_KEY" ]; then
   # $GH_DEPLOY_KEY should be inserted into project settings quoted and with newlines escaped as \n
   eval `ssh-agent`
-  echo -e "$GH_DEPLOY_KEY" | ssh-add /dev/stdin
+  printf "%b" "$GH_DEPLOY_KEY" | ssh-add /dev/stdin
   REPO="git@github.com:${TRAVIS_REPO_SLUG}.git"
 else
   echo "GH_TOKEN or GH_DEPLOY_KEY variable must be set"
