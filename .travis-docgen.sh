@@ -4,7 +4,7 @@
 set -e
 # Make sure we're not echoing any sensitive data
 set +x
-set -o errexit -o nounset
+set -o nounset
 
 # Initialise used variables to prevent errors with "-o nounset"
 DOCDIR=.gh-pages
